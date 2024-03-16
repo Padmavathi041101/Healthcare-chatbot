@@ -33,10 +33,10 @@ To get started with HealthBot, follow these steps:
     Obtain API keys for any external services being used (e.g., geolocation services) and add them to the appropriate configuration file.
 4. **Run the Application:**
     ```bash
-    python app.py
+    streamlit run app.py
     ```
 5. **Access the Chatbot:**
-    Navigate to [http://localhost:5000](http://localhost:5000) in your web browser to interact with HealthBot.
+    Navigate to [http://localhost:8501](http://localhost:8501) in your web browser to interact with HealthBot.
 
 
 ### License
@@ -47,4 +47,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For any inquiries or collaboration opportunities, feel free to reach out:
 - **Name:** Padmavathi
 - **LinkedIn:** 
-- **Email:** (Provide your email address here)
+- **Email:** ()
