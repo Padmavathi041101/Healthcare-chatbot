@@ -1,0 +1,15 @@
+git+https://github.com/openai/whisper.git
+requests
+google-search-results
+google-api-python-client
+openai
+fastapi
+pydantic
+uvicorn
+python-dotenv
+geocoder
+geopy
+gradio
+pytz
+python-multipart
+streamlit
