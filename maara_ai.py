@@ -8,6 +8,8 @@ import pytz
 from openai import OpenAI
 from typing import Dict, Set, List, Optional
 from datetime import datetime
+from database.pymongo_connection import mongo_db
+from database.history_manager import insert_conversation_log
 from translator import GoogleTranslator
 
   
@@ -22,28 +24,21 @@ def translate_dialogue(dialogue, target_language):
         message['content'] = translator_ins(message['content'], target_language)
     return dialogue
 
-
-history_file = "historys.json"
-if os.path.exists(history_file):
-    with open(history_file, "r") as file:
-        historys = json.load(file)
-else:
-    historys = []
-
-def save_history():
-    """Saves the current historys list to a file."""
-    with open(history_file, "w") as file:
-        json.dump(historys, file)
-
+# Instance creation and configurations
+maara_db = mongo_db(os.environ["mongo_db"], "maara")
+maara_db.connect()
+collection = maara_db.get_collection("maara_conversation_history")
 
 
 client = OpenAI()
 
 System_prompt = maara.system_prompt(str(datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%Y-%m-%d %H:%M:%S')))
 
-def maara_ai_assistant(prompt):
-    global historys       
-    messages = [{"role": "system", "content": System_prompt},] + historys[-6:] + [{ "role": "user", "content": prompt },]
+def maara_ai_assistant(prompt, conversation_id):
+    results = collection.find({"conversation_id": conversation_id},{"role": 1, "content": 1, "_id": 0}).sort([("date", 1)])
+    all_messages = list(results)
+    historys = all_messages[-8:] if len(all_messages) > 8 else all_messages
+    messages = [{"role": "system", "content": System_prompt},] + historys + [{ "role": "user", "content": prompt },]
 
     while True:
         response = client.chat.completions.create(
@@ -83,26 +78,20 @@ def maara_ai_assistant(prompt):
 
             elif action[-1] == "Response To Human":
                 messages.extend([{ "role": "system", "content": action_input[-1] }])
-                historys.extend([  # Change square brackets to parentheses
-                    { "role": "assistant", "content": prompt },
-                    { "role": "user", "content": action_input[-1] },
-                ])
-                save_history() 
+                insert_conversation_log(collection, prompt, action_input[-1], conversation_id) 
                 return action_input[-1]
                 
         else:
-            historys.extend([  # Change square brackets to parentheses
-                { "role": "assistant", "content": prompt },
-                { "role": "user", "content": response_text },
-            ])
-            save_history() 
+            insert_conversation_log(collection, prompt, response_text, conversation_id)
             return response_text
         
 
-def maara_ai_mulitlang_assistant(prompt, language):
+def maara_ai_mulitlang_assistant(prompt,conversation_id, language):
 
-    global historys       
-    history = translate_dialogue(historys[-6:], "en")
+    results = collection.find({"conversation_id": conversation_id},{"role": 1, "content": 1, "_id": 0}).sort([("date", 1)])
+    all_messages = list(results)
+    historys = all_messages[-8:] if len(all_messages) > 8 else all_messages 
+    history = translate_dialogue(historys, "en")
     messages = [{"role": "system", "content": System_prompt},] + history + [{ "role": "user", "content": prompt },]
 
     while True:
@@ -138,18 +127,10 @@ def maara_ai_mulitlang_assistant(prompt, language):
             elif action[-1] == "Response To Human":
                 response_text = translator_ins(action_input[-1], language)
                 messages.extend([{ "role": "system", "content": response_text }])
-                historys.extend([ 
-                    { "role": "assistant", "content": prompt },
-                    { "role": "user", "content": response_text },
-                ])
-                save_history() 
+                insert_conversation_log(collection, prompt, response_text, conversation_id)
                 return response_text
                 
         else:
             response_text = translator_ins(response_text, language)
-            historys.extend([ 
-                { "role": "assistant", "content": prompt },
-                { "role": "user", "content": response_text },
-            ])
-            save_history() 
+            insert_conversation_log(collection, prompt, response_text, conversation_id)   
             return response_text

@@ -14,3 +14,4 @@ pytz
 pymongo
 python-multipart
 streamlit
+audio-recorder-streamlit
