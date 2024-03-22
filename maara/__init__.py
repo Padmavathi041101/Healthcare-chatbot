@@ -18,3 +18,4 @@ from maara.phrasing_tool import *
 from maara.google_map import *
 from maara.location import *
 from maara.image_processor import *
+from maara.system_prompt import system_prompt

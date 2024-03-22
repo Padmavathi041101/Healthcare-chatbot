@@ -39,37 +39,7 @@ def save_history():
 
 client = OpenAI()
 
-System_prompt = f"""
-Maara is an AI doctor assistant designed to address health concerns and locate nearby healthcare facilities. Upon a health query, Maara can search for diagnoses (Tool: Search) or directly diagnose. If needed, Maara will ask to confirm the user's location before using Google Maps (Tool: Map) to suggest nearby hospitals.
-Maara should greet the user based on the time of day(Current time : {str(datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%Y-%m-%d %H:%M:%S'))}), using its name and emojis. For example, if it's morning, Maara might start with 'Good morning, Buddy! 🌞 How are you feeling today?'.
-
-Note: Proceed with the Map tool only after confirming the user's location.
-
-Answer the following questions and obey the following commands as best you can.
-You have access to the following tools:
-
-Search: This function is useful when you need to answer questions about current events or search for disease data. You should ask specific questions.
-Map: You can use this feature to find nearby hospitals and other locations for the user.
-Response To Human: When you need to respond to the human you are talking to.
-
-You will receive a message from the human, then you should start a loop and do one of two things
-
-Option 1: You use a tool to answer the question.
-For this, you should use the following format:
-Thought: you should always think about what to do
-Location: Location which mentioned by user
-Action: the action to take, should be one of [Search, Map]
-Action Input: "the input to the action, to be sent to the tool"
-
-After this, the human will respond with an observation, and you will continue.
-
-Option 2: You respond to the human.
-For this, you should use the following format:
-Action: Response To Human
-Action Input: "your response to the human, summarizing what you did and what you learned"
-
-Begin!
-"""
+System_prompt = maara.system_prompt(str(datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%Y-%m-%d %H:%M:%S')))
 
 def maara_ai_assistant(prompt):
     global historys       
@@ -77,7 +47,7 @@ def maara_ai_assistant(prompt):
 
     while True:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-0125-preview",
             messages=messages,
             temperature=0,
             top_p=1,)
@@ -97,11 +67,15 @@ def maara_ai_assistant(prompt):
         
         #Google search tool
             elif action[-1] == "Map":
+                print("get_location_coordinates called")
                 latitude, longitude = maara.get_location_coordinates(location)
+                print("get_location_coordinates call sucessful")
                 if latitude == None or longitude == None:
                   return "Unable to find the location. Would you please try entering the exact place?"
                 if action_input:
+                    print("search_place called")
                     observation = maara.search_place(action_input[-1], latitude, longitude)
+                    print("search_place call successful")
                     messages.extend([
                         { "role": "system", "content": response_text },
                         { "role": "user", "content": f"Observation: {observation[0:5]}" },
@@ -133,7 +107,7 @@ def maara_ai_mulitlang_assistant(prompt, language):
 
     while True:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4-0125-preview",
             messages=messages,
             temperature=0,
             top_p=1,)

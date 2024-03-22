@@ -30,5 +30,3 @@ def search_place(search, latitude, longitude):
   return information
 
 
-
-

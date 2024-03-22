@@ -6,8 +6,6 @@ import html
 import urllib.parse
 
 class GoogleTranslator:
-
-
     def __init__(self, source_language='auto', target_language='tr', timeout=5):
         self.source_language = source_language
         self.target_language = target_language
